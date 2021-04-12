@@ -5,11 +5,11 @@ const ejs = require("ejs");
 require("dotenv").config();
 
 const { BlobServiceClient } = require("@azure/storage-blob");
-const { v1: uuidv1 } = require("uuid");
 const getStream = require("into-stream");
 const ONE_MEGABYTE = 1024 * 1024;
 const uploadOptions = { bufferSize: 4 * ONE_MEGABYTE, maxBuffers: 20 };
-//config
+
+// express config
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, "public")));
@@ -17,31 +17,29 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.set("view engine", "ejs");
 app.set("views", "views");
+
 //multer config
 var storage = multer.memoryStorage();
 var upload = multer({ storage: storage });
 const streamToBuffer = require("./streamToBuffer.js");
+
 //azure config
 const AZURE_STORAGE_CONNECTION_STRING =
     process.env.AZURE_STORAGE_CONNECTION_STRING;
-
 const blobServiceClient = BlobServiceClient.fromConnectionString(
     AZURE_STORAGE_CONNECTION_STRING
 );
 var myContainer;
-//create container function run only once
-// async function createContainer() {
-//     const containerName = `pdfcontainer${new Date().getTime()}`;
-//     myContainer = blobServiceClient.getContainerClient("a1a8210c-101e-0019-6ba6-2e1bf4000000");
-//     const createContainerResponse = await myContainer.create();
-//     console.log(
-//         `Create container ${containerName} successfully`,
-//         createContainerResponse.requestId
-//     );
-// }
+
+
+//run only once
+app.get("/create", async(req, res, next) => {
+    await createMyContainer("pdfcontainer")
+    res.redirect("/")
+});
 
 //get container
-myContainer = blobServiceClient.getContainerClient("pdfcontainer1618127028369");
+myContainer = blobServiceClient.getContainerClient("pdfcontainer-1618206209039");
 
 app.post("/upload", upload.single("pdf"), async (req, res, next) => {
     const pdfFile = req.file;
@@ -51,21 +49,21 @@ app.post("/upload", upload.single("pdf"), async (req, res, next) => {
     } catch (e) {
         console.log(e);
     }
-    res.render("home");
+    res.redirect("/");
 });
-app.get("/delete", async (req, res, next) => {
+app.get("/delete/:name", async (req, res, next) => {
+    const name = req.params.name;
     try {
-        await deleteBlob("");
+        await deleteBlob(name);
     } catch (e) {
         console.log(e);
     }
-    res.render("home");
+    res.redirect("/");
 });
-app.get("/download", async (req, res, next) => {
+app.get("/download/:name", async (req, res, next) => {
+    const name = req.params.name;
     try {
-        const pdfBuffer = await downloadBlob(
-            "case study rohan.pdf-1618136609114"
-        );
+        const pdfBuffer = await downloadBlob(name);
         res.writeHead(200, {
             "Content-Type": "application/pdf",
             "Content-Disposition":
@@ -78,29 +76,36 @@ app.get("/download", async (req, res, next) => {
     }
 });
 
-app.get("/getAll", async (req, res, next) => {
+app.get("/", async (req, res, next) => {
     try {
-        //upload
-        await getAllBlobs();
+        //get all
+        const allBlobsList = await getAllBlobs();
+        res.render("home", { blobs: allBlobsList });
     } catch (e) {
         console.log(e);
+        return res.render("home", { blobs: [] });
     }
-    res.render("home");
 });
 
-app.get("/", (req, res, next) => {
-    res.render("home");
-});
 app.listen(PORT, () => {
     console.log("listening on PORT 3000");
 });
 
+//CREATE Container once
+const createMyContainer = async (text) => {
+    const containerName = `${text}-${new Date().getTime()}`;
+    myContainer = blobServiceClient.getContainerClient(containerName);
+    const createContainerResponse = await myContainer.create();
+    console.log(
+        `Create container ${containerName} successfully`,
+        createContainerResponse
+    );
+};
 
 //GET all blobs
 const getAllBlobs = async () => {
     let allBlobsList = [];
     for await (const blob of myContainer.listBlobsFlat()) {
-        console.log(blob);
         allBlobsList.push(blob);
     }
     return allBlobsList;

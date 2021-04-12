@@ -5,12 +5,48 @@
 }
 main {
     width: 100vw;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.wrapper {
+    margin-top: 24px;
+    width: 500px;
 }
 form {
     text-align: center;
 }
-
-.row {
-    --bs-gutter-x: 0;
+.list {
+    margin-top: 24px;
+    padding: 4px;
+}
+.list .item {
+    list-style: none;
+    text-align: left;
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
+    align-items: center;
+    padding: 2px 8px;
+    margin: 8px 8px;
+    box-shadow: 2px 2px 4px 2px rgb(243, 240, 240);
+    border-radius: 12px;
+}
+.list .item:hover {
+    cursor: pointer;
+    box-shadow: 2px 2px 4px 2px rgb(233, 227, 227);
+}
+.list p {
+    width: 300px;
+    overflow-x: hidden;
+}
+.list button {
+    margin: 4px 8px;
+}
+.list button a {
+    text-decoration: none;
+    color: #fff;
+}
+p {
+    margin-bottom: 0;
 }
