@@ -13,6 +13,15 @@ main {
     margin-top: 24px;
     width: 500px;
 }
+.brand {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+.brand img {
+    margin: 12px;
+}
 form {
     text-align: center;
 }

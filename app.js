@@ -1,13 +1,9 @@
+//imports
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const ejs = require("ejs");
 require("dotenv").config();
-
-const { BlobServiceClient } = require("@azure/storage-blob");
-const getStream = require("into-stream");
-const ONE_MEGABYTE = 1024 * 1024;
-const uploadOptions = { bufferSize: 4 * ONE_MEGABYTE, maxBuffers: 20 };
 
 // express config
 const app = express();
@@ -21,25 +17,34 @@ app.set("views", "views");
 //multer config
 var storage = multer.memoryStorage();
 var upload = multer({ storage: storage });
+
 const streamToBuffer = require("./streamToBuffer.js");
 
 //azure config
+const { BlobServiceClient } = require("@azure/storage-blob");
+const getStream = require("into-stream");
+const ONE_MEGABYTE = 1024 * 1024;
+const uploadOptions = { bufferSize: 4 * ONE_MEGABYTE, maxBuffers: 20 };
+
 const AZURE_STORAGE_CONNECTION_STRING =
     process.env.AZURE_STORAGE_CONNECTION_STRING;
+
 const blobServiceClient = BlobServiceClient.fromConnectionString(
     AZURE_STORAGE_CONNECTION_STRING
 );
+
+//container variable
 var myContainer;
 
-
 //run only once
-app.get("/create", async(req, res, next) => {
-    await createMyContainer("pdfcontainer")
-    res.redirect("/")
-});
+// app.get("/create", async (req, res, next) => {
+//     await createMyContainer("pdfcontainer");
+//     res.redirect("/");
+// });
 
-//get container
-myContainer = blobServiceClient.getContainerClient("pdfcontainer-1618206209039");
+
+//reference to containerClient
+myContainer = blobServiceClient.getContainerClient("pdfcontainer");
 
 app.post("/upload", upload.single("pdf"), async (req, res, next) => {
     const pdfFile = req.file;
@@ -93,7 +98,7 @@ app.listen(PORT, () => {
 
 //CREATE Container once
 const createMyContainer = async (text) => {
-    const containerName = `${text}-${new Date().getTime()}`;
+    const containerName = `${text}`;
     myContainer = blobServiceClient.getContainerClient(containerName);
     const createContainerResponse = await myContainer.create();
     console.log(
@@ -158,3 +163,8 @@ const downloadBlob = async (blobName) => {
         throw new Error("downloadBlob function throwed !");
     }
 };
+
+
+// (async function () {
+//     await createMyContainer("pdfcontainer");
+// })();
